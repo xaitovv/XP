@@ -13,7 +13,10 @@ PROVAYDERLAR = [
      "model": os.environ.get("GEMINI_MODEL", "gemini-3.6-flash").strip()},
     {"nom": "Groq", "url": "https://api.groq.com/openai/v1",
      "kalit": os.environ.get("GROQ_KEY"),
-     "model": os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")},
+     "model": os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile").strip()},
+    {"nom": "Mistral", "url": "https://api.mistral.ai/v1",
+     "kalit": os.environ.get("MISTRAL_KEY"),
+     "model": os.environ.get("MISTRAL_MODEL", "mistral-small-latest").strip()},
     {"nom": "OpenRouter", "url": "https://openrouter.ai/api/v1",
      "kalit": os.environ.get("OPENROUTER_KEY"),
      "model": os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")},
@@ -54,7 +57,7 @@ def chat():
                     time.sleep(1)
                     continue
                 xatolar.append(p["nom"] + " (" + p["model"] + "): " + xato[:200])
-                if "404" in xato:
+                if "404" in xato or "decommission" in xato or "not found" in xato.lower():
                     try:
                         nomlar = [m.id for m in c.models.list()]
                         xatolar.append("Ochiq modellar: " + ", ".join(nomlar[:25]))
