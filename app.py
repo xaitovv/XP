@@ -6,14 +6,16 @@ app = Flask(__name__)
 
 SYSTEM = "Sen mening shaxsiy yordamchimsan. Foydalanuvchi qaysi tilda yozsa, shu tilda javob ber (asosan o'zbekcha)."
 
-# Navbat bilan sinab ko'riladi. Biri xato yoki limit bersa, keyingisiga o'tadi.
 PROVAYDERLAR = [
-    {"url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-     "kalit": os.environ.get("GEMINI_KEY"), "model": "gemini-2.0-flash"},
-    {"url": "https://api.groq.com/openai/v1",
-     "kalit": os.environ.get("GROQ_KEY"), "model": "llama-3.3-70b-versatile"},
-    {"url": "https://openrouter.ai/api/v1",
-     "kalit": os.environ.get("OPENROUTER_KEY"), "model": "meta-llama/llama-3.3-70b-instruct:free"},
+    {"nom": "Gemini", "url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+     "kalit": os.environ.get("GEMINI_KEY"),
+     "model": os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")},
+    {"nom": "Groq", "url": "https://api.groq.com/openai/v1",
+     "kalit": os.environ.get("GROQ_KEY"),
+     "model": os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")},
+    {"nom": "OpenRouter", "url": "https://openrouter.ai/api/v1",
+     "kalit": os.environ.get("OPENROUTER_KEY"),
+     "model": os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")},
 ]
 
 FAYLLAR = {"index.html", "manifest.json", "sw.js", "icon-192.png", "icon-512.png"}
@@ -35,6 +37,7 @@ def fayl(nom):
 def chat():
     tarix = request.json.get("messages", [])[-20:]
     msgs = [{"role": "system", "content": SYSTEM}] + tarix
+    xatolar = []
     for p in PROVAYDERLAR:
         if not p["kalit"]:
             continue
@@ -42,6 +45,6 @@ def chat():
             c = OpenAI(base_url=p["url"], api_key=p["kalit"], timeout=40)
             r = c.chat.completions.create(model=p["model"], messages=msgs)
             return jsonify({"javob": r.choices[0].message.content})
-        except Exception:
-            continue
-    return jsonify({"javob": "Hozir hamma xizmat band. Birozdan keyin urinib ko'ring."})
+        except Exception as e:
+            xatolar.append(p["nom"] + ": " + str(e)[:200])
+    return jsonify({"javob": "Xizmatlar javob bermadi.\n\n" + "\n".join(xatolar)})
