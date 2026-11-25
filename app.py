@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, request, jsonify, send_from_directory, abort
 from openai import OpenAI
 
@@ -41,16 +42,23 @@ def chat():
     for p in PROVAYDERLAR:
         if not p["kalit"]:
             continue
-        try:
-            c = OpenAI(base_url=p["url"], api_key=p["kalit"], timeout=40)
-            r = c.chat.completions.create(model=p["model"], messages=msgs)
-            return jsonify({"javob": r.choices[0].message.content})
-        except Exception as e:
-            xatolar.append(p["nom"] + " (" + p["model"] + "): " + str(e)[:200])
-            if "404" in str(e):
-                try:
-                    nomlar = [m.id for m in c.models.list()]
-                    xatolar.append("Ochiq modellar: " + ", ".join(nomlar[:25]))
-                except Exception as e2:
-                    xatolar.append("Ro'yxat olinmadi: " + str(e2)[:150])
+        c = OpenAI(base_url=p["url"], api_key=p["kalit"], timeout=8, max_retries=0)
+        for urinish in range(3):
+            try:
+                r = c.chat.completions.create(model=p["model"], messages=msgs)
+                return jsonify({"javob": r.choices[0].message.content})
+            except Exception as e:
+                xato = str(e)
+                vaqtincha = "503" in xato or "429" in xato or "timed out" in xato.lower()
+                if vaqtincha and urinish < 2:
+                    time.sleep(1)
+                    continue
+                xatolar.append(p["nom"] + " (" + p["model"] + "): " + xato[:200])
+                if "404" in xato:
+                    try:
+                        nomlar = [m.id for m in c.models.list()]
+                        xatolar.append("Ochiq modellar: " + ", ".join(nomlar[:25]))
+                    except Exception as e2:
+                        xatolar.append("Ro'yxat olinmadi: " + str(e2)[:150])
+                break
     return jsonify({"javob": "Xizmatlar javob bermadi.\n\n" + "\n".join(xatolar)})
