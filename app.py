@@ -13,7 +13,7 @@ PROVAYDERLAR = [
      "model": os.environ.get("GEMINI_MODEL", "gemini-3.6-flash").strip()},
     {"nom": "Groq", "url": "https://api.groq.com/openai/v1",
      "kalit": os.environ.get("GROQ_KEY"),
-     "model": os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile").strip()},
+     "model": os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b").strip()},
     {"nom": "Mistral", "url": "https://api.mistral.ai/v1",
      "kalit": os.environ.get("MISTRAL_KEY"),
      "model": os.environ.get("MISTRAL_MODEL", "mistral-small-latest").strip()},
@@ -45,14 +45,14 @@ def chat():
     for p in PROVAYDERLAR:
         if not p["kalit"]:
             continue
-        c = OpenAI(base_url=p["url"], api_key=p["kalit"], timeout=8, max_retries=0)
+        c = OpenAI(base_url=p["url"], api_key=p["kalit"], timeout=45, max_retries=0)
         for urinish in range(3):
             try:
                 r = c.chat.completions.create(model=p["model"], messages=msgs)
                 return jsonify({"javob": r.choices[0].message.content})
             except Exception as e:
                 xato = str(e)
-                vaqtincha = "503" in xato or "429" in xato or "timed out" in xato.lower()
+                vaqtincha = "503" in xato or "429" in xato
                 if vaqtincha and urinish < 2:
                     time.sleep(1)
                     continue
